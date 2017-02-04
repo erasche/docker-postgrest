@@ -1,27 +1,24 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -x
+set -ex
 
-DBHOST=${DBHOST:-${POSTGRES_PORT_5432_TCP_ADDR:-"postgres"}}
-DBNAME=${DBNAME:-${POSTGRES_ENV_POSTGRES_USER:-"postgres"}}
-DBPORT=${DBPORT:-"5432"}
+cat <<CONFFILE
+db-uri = "$DB_URI"
+db-schema = "$DB_SCHEMA"
+db-anon-role = "$DB_ANON_ROLE"
+db-pool = $DB_POOL
 
-DBUSER=${DBUSER:-${POSTGRES_ENV_POSTGRES_USER:-"postgres"}}
-DBPASS=${DBPASS:-${POSTGRES_ENV_POSTGRES_PASSWORD:-"postgres"}}
-DBPOOL=${DBPOOL:-"200"}
-PORT=${PORT:-"3000"}
+## choose a secret to enable JWT auth
+## (use "@filename" to load from separate file)
+jwt-secret = "$JWT_SECRET"
+secret-is-base64 = false
 
-SCHEMA=${SCHEMA:-"public"}
+## limit rows in response
+max-rows = $DB_MAXROWS
 
-ANONUSER=${ANONUSER:-"postgres"}
+## stored proc to exec immediately after auth
+# pre-request = "stored_proc_name"
+CONFFILE
+> /tmp/postgrest.conf;
 
-SLEEP=${SLEEP:-"0"}
-
-sleep "$SLEEP"
-
-postgrest postgres://$DBUSER:$DBPASS@$DBHOST:$DBPORT/$DBNAME \
-          --pool "$DBPOOL" \
-          --port "$PORT" \
-          --anonymous "$ANONUSER" \
-          --schema "$SCHEMA"
-
+postgrest /tmp/postgrest.conf
